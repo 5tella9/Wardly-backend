@@ -15,18 +15,18 @@ class UserModel {
   });
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'username': username,
-        'email': email,
-        'password': password,
-      };
+    'id': id,
+    'username': username,
+    'email': email,
+    'password': password,
+  };
 
   factory UserModel.fromMap(Map<String, dynamic> m) => UserModel(
-        id: m['id'],
-        username: m['username'],
-        email: m['email'],
-        password: m['password'],
-      );
+    id: m['id'],
+    username: m['username'],
+    email: m['email'],
+    password: m['password'],
+  );
 }
 
 class AuthService {
@@ -39,7 +39,9 @@ class AuthService {
     final raw = sp.getString(_usersKey);
     if (raw == null) return [];
     final List data = jsonDecode(raw);
-    return data.map((e) => UserModel.fromMap(Map<String, dynamic>.from(e))).toList();
+    return data
+        .map((e) => UserModel.fromMap(Map<String, dynamic>.from(e)))
+        .toList();
   }
 
   static Future<void> _saveUsers(List<UserModel> users) async {
@@ -58,14 +60,20 @@ class AuthService {
     final users = await _getUsers();
     // simple validations
     if (username.trim().isEmpty) return 'Username kosong';
-    if (email.trim().isEmpty || !email.contains('@')) return 'Email tidak valid';
+    if (email.trim().isEmpty || !email.contains('@')) {
+      return 'Email not valid';
+    }
     if (password.length < 4) return 'Password minimal 4 karakter';
 
     // unique username/email check (case-insensitive)
-    final existsUsername = users.any((u) => u.username.toLowerCase() == username.toLowerCase());
+    final existsUsername = users.any(
+      (u) => u.username.toLowerCase() == username.toLowerCase(),
+    );
     if (existsUsername) return 'Username sudah dipakai';
 
-    final existsEmail = users.any((u) => u.email.toLowerCase() == email.toLowerCase());
+    final existsEmail = users.any(
+      (u) => u.email.toLowerCase() == email.toLowerCase(),
+    );
     if (existsEmail) return 'Email sudah dipakai';
 
     final newUser = UserModel(
@@ -88,10 +96,12 @@ class AuthService {
   }) async {
     final users = await _getUsers();
     final u = users.firstWhere(
-      (x) => x.email.toLowerCase() == email.toLowerCase() && x.password == password,
+      (x) =>
+          x.email.toLowerCase() == email.toLowerCase() &&
+          x.password == password,
       orElse: () => UserModel(id: '', username: '', email: '', password: ''),
     );
-    if (u.id == '') return 'Email atau password salah';
+    if (u.id == '') return 'Wrong Email or password';
     final sp = await SharedPreferences.getInstance();
     await sp.setString(_loggedKey, jsonEncode(u.toMap()));
     return null;
@@ -104,21 +114,29 @@ class AuthService {
   }) async {
     final users = await _getUsers();
     final u = users.firstWhere(
-      (x) => x.username.toLowerCase() == username.toLowerCase() && x.password == password,
+      (x) =>
+          x.username.toLowerCase() == username.toLowerCase() &&
+          x.password == password,
       orElse: () => UserModel(id: '', username: '', email: '', password: ''),
     );
-    if (u.id == '') return 'Username atau password salah';
+    if (u.id == '') return 'Wrong Username or password';
     final sp = await SharedPreferences.getInstance();
     await sp.setString(_loggedKey, jsonEncode(u.toMap()));
     return null;
   }
 
   // unified login: accept usernameOrEmail and password
-  static Future<String?> login({required String usernameOrEmail, required String password}) async {
+  static Future<String?> login({
+    required String usernameOrEmail,
+    required String password,
+  }) async {
     if (usernameOrEmail.contains('@')) {
       return await loginWithEmail(email: usernameOrEmail, password: password);
     } else {
-      return await loginWithUsername(username: usernameOrEmail, password: password);
+      return await loginWithUsername(
+        username: usernameOrEmail,
+        password: password,
+      );
     }
   }
 

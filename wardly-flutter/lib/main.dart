@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../auth_service.dart';
+import 'pages/login_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -45,8 +46,14 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Delete account'),
         content: const Text('Are you sure to delete your account?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
         ],
       ),
     );
@@ -67,29 +74,45 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          CircleAvatar(radius: 36, child: Text(_username.isNotEmpty ? _username[0].toUpperCase() : '?')),
-          const SizedBox(height: 8),
-          Text('Hello, $_username', style: const TextStyle(fontSize: 18)),
-          const SizedBox(height: 4),
-          Text(_email),
-          const SizedBox(height: 16),
-          ElevatedButton(onPressed: _deleteAccount, child: const Text('Delete account')),
-        ]),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 36,
+              child: Text(
+                _username.isNotEmpty ? _username[0].toUpperCase() : '?',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text('Hello, $_username', style: const TextStyle(fontSize: 18)),
+            const SizedBox(height: 4),
+            Text(_email),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _deleteAccount,
+              child: const Text('Delete account'),
+            ),
+          ],
+        ),
       ),
     );
   }
-
 }
 
-void main() => runApp(const MyApp());
+void main() {
+  runApp(const WardlyApp());
+}
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class WardlyApp extends StatelessWidget {
+  const WardlyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: WardlyHome(), debugShowCheckedModeBanner: false);
+    return MaterialApp(
+      title: 'WARDLY',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: const LoginPage(),
+    );
   }
 }
 
