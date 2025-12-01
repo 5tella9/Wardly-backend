@@ -38,7 +38,7 @@ function App(){
 
 export default App
 
-// Simple Auth component (client-only, for demo)
+
 function Auth({onLogin}){
   const [isLogin, setIsLogin] = useState(true)
   const [form, setForm] = useState({username:'',email:'',password:''})
@@ -46,14 +46,14 @@ function Auth({onLogin}){
   function submit(e){
     e.preventDefault()
     if(isLogin){
-      // try get from localStorage users
+      
       const users = JSON.parse(localStorage.getItem('wardly_users')||'[]')
       const u = users.find(x=>x.email===form.email && x.password===form.password)
       if(u) onLogin(u)
-      else alert('Login failed — email/password salah (demo)')
+      else alert('Login failed — email/password wrong (demo)')
     } else {
       const users = JSON.parse(localStorage.getItem('wardly_users')||'[]')
-      if(users.find(x=>x.email===form.email)) return alert('Email sudah dipakai')
+      if(users.find(x=>x.email===form.email)) return alert('Email has used!')
       const newUser = {username: form.username || form.email.split('@')[0], email: form.email, password: form.password, avatar: null}
       users.push(newUser)
       localStorage.setItem('wardly_users', JSON.stringify(users))
@@ -72,7 +72,7 @@ function Auth({onLogin}){
         <input placeholder="password" type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} required />
         <button type="submit">{isLogin? 'Login' : 'Create'}</button>
       </form>
-      <p onClick={()=>setIsLogin(!isLogin)} style={{cursor:'pointer'}}>{isLogin? 'Buat account baru' : 'Sudah punya account? Login'}</p>
+      <p onClick={()=>setIsLogin(!isLogin)} style={{cursor:'pointer'}}>{isLogin? 'create an account' : 'I already have account'}</p>
     </div>
   )
 }

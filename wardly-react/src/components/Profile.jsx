@@ -15,7 +15,7 @@ export default function Profile({user, setUser}){
   }
 
   function del(){
-    if(!confirm('Hapus account?')) return
+    if(!confirm('Delete account?')) return
     let users = JSON.parse(localStorage.getItem('wardly_users')||'[]')
     users = users.filter(u=>u.email!==user.email)
     localStorage.setItem('wardly_users', JSON.stringify(users))
