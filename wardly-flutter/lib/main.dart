@@ -25,9 +25,7 @@ class WardlyApp extends StatelessWidget {
     return MaterialApp(
       title: 'WARDLY',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: const WardlyHome(),
     );
   }
@@ -76,11 +74,7 @@ class _WardlyHomeState extends State<WardlyHome> {
         child: SafeArea(
           child: IndexedStack(
             index: _index,
-            children: [
-              buildHome(),
-              buildAdd(),
-              buildProfile(),
-            ],
+            children: [buildHome(), buildAdd(), buildProfile()],
           ),
         ),
       ),
@@ -108,8 +102,11 @@ class _WardlyHomeState extends State<WardlyHome> {
             'All',
             'Pants',
             'Skirts',
-            'Top',
             'Dresses',
+            'Shirts',
+            'Outer',
+            'T-Shirt',
+            'Hoodie',
           ].map((e) => Chip(label: Text(e))).toList(),
         ),
         Expanded(
@@ -125,10 +122,7 @@ class _WardlyHomeState extends State<WardlyHome> {
               final it = items[i];
               final hasBytes = it.containsKey('bytes');
               final img = hasBytes
-                  ? Image.memory(
-                      it['bytes'] as Uint8List,
-                      fit: BoxFit.cover,
-                    )
+                  ? Image.memory(it['bytes'] as Uint8List, fit: BoxFit.cover)
                   : Container(color: Colors.grey);
 
               return Stack(
@@ -192,10 +186,7 @@ class _WardlyHomeState extends State<WardlyHome> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircleAvatar(
-              radius: 40,
-              child: Icon(Icons.person, size: 40),
-            ),
+            const CircleAvatar(radius: 40, child: Icon(Icons.person, size: 40)),
             const SizedBox(height: 10),
             Text(
               user?.email ?? 'Not signed in',
@@ -246,9 +237,7 @@ class _WardlyHomeState extends State<WardlyHome> {
             ),
             const SizedBox(height: 10),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               onPressed: () => showDialog(
                 context: context,
                 builder: (_) => AlertDialog(
@@ -286,24 +275,19 @@ class _WardlyHomeState extends State<WardlyHome> {
     }
 
     try {
-      await _client.auth.signUp(
-        email: email,
-        password: password,
-      );
+      await _client.auth.signUp(email: email, password: password);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Signed up. If email confirmation is on, check inbox.',
-          ),
+          content: Text('Signed up. If email confirmation is on, check inbox.'),
         ),
       );
       setState(() {}); // refresh to show user if auto-logged in
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sign up error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Sign up error: $e')));
     }
   }
 
@@ -312,9 +296,9 @@ class _WardlyHomeState extends State<WardlyHome> {
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter email and password')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Enter email and password')));
       return;
     }
 
@@ -326,14 +310,12 @@ class _WardlyHomeState extends State<WardlyHome> {
       setState(() {}); // refresh UI with logged-in user
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Signed in as ${res.user?.email ?? email}'),
-        ),
+        SnackBar(content: Text('Signed in as ${res.user?.email ?? email}')),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sign in error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Sign in error: $e')));
     }
   }
 
@@ -341,14 +323,14 @@ class _WardlyHomeState extends State<WardlyHome> {
     try {
       await _client.auth.signOut();
       setState(() {});
-            if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Signed out')),
-      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Signed out')));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sign out error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Sign out error: $e')));
     }
   }
 
@@ -364,23 +346,20 @@ class _WardlyHomeState extends State<WardlyHome> {
       return null;
     }
 
-    final fileName =
-        '${user.id}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final fileName = '${user.id}/${DateTime.now().millisecondsSinceEpoch}.jpg';
 
     try {
-      await _client.storage
-          .from('wardrobe')
-          .uploadBinary(fileName, bytes);
+      await _client.storage.from('wardrobe').uploadBinary(fileName, bytes);
 
-      final imageUrl =
-          _client.storage.from('wardrobe').getPublicUrl(fileName);
+      final imageUrl = _client.storage.from('wardrobe').getPublicUrl(fileName);
 
       return imageUrl;
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar( 
-        SnackBar(content: Text('Upload error: $e')),
-      );
-      
+      if (!mounted) return null;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Upload error: $e')));
+
       return null;
     }
   }
@@ -393,9 +372,9 @@ class _WardlyHomeState extends State<WardlyHome> {
     final user = _client.auth.currentUser;
 
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sign in first')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Sign in first')));
       return;
     }
 
@@ -407,9 +386,10 @@ class _WardlyHomeState extends State<WardlyHome> {
         'title': title ?? 'Untitled item',
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Insert error: $e')),
-      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Insert error: $e')));
     }
   }
 
@@ -441,11 +421,7 @@ class _WardlyHomeState extends State<WardlyHome> {
     }
 
     setState(() {
-      items.insert(0, {
-        'bytes': bytes,
-        'fav': false,
-        'type': 'Top',
-      });
+      items.insert(0, {'bytes': bytes, 'fav': false, 'type': 'Top'});
       _index = 0;
     });
   }
@@ -476,11 +452,7 @@ class _WardlyHomeState extends State<WardlyHome> {
     }
 
     setState(() {
-      items.insert(0, {
-        'bytes': bytes,
-        'fav': false,
-        'type': 'Top',
-      });
+      items.insert(0, {'bytes': bytes, 'fav': false, 'type': 'Top'});
       _index = 0;
     });
   }
