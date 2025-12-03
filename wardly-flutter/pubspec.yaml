@@ -17,6 +17,7 @@ dependencies:
   path_provider: ^2.0.11
   firebase_core: ^4.2.1
   firebase_auth: ^6.1.2
+  google_fonts: ^6.2.1 # ← tambahkan di sini
 
 dev_dependencies:
   flutter_test:

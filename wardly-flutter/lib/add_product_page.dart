@@ -69,7 +69,7 @@ class _AddProductPageState extends State<AddProductPage> {
       'imagePath': _image!.path, // path lokal
     };
 
-    print('Product saved: $newProduct');
+    debugPrint('Product saved: $newProduct');
 
     Navigator.pop(context);
   }
@@ -131,7 +131,7 @@ class _AddProductPageState extends State<AddProductPage> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _selectedCategory =
+                initialValue: _selectedCategory =
                     _categories[0], // null di awal → hint muncul
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
@@ -179,7 +179,7 @@ class _AddProductPageState extends State<AddProductPage> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _selectedSize = _sizes[0],
+                initialValue: _selectedSize = _sizes[0],
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
