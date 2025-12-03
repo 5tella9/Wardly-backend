@@ -8,148 +8,157 @@ class AddProductPage extends StatefulWidget {
 }
 
 class _AddProductPageState extends State<AddProductPage> {
-  // Controller
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController brandController = TextEditingController();
+  // Controllers
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _brandController = TextEditingController();
 
-  // Dropdown Values
-  String selectedCategory = "T-Shirt";
-  String selectedSize = "M";
+  // Variables for the dropdown
+  String? _selectedCategory;
+  String? _selectedSize;
 
-  // Category Options
-  final List<String> categoryList = [
-    "T-Shirt",
-    "Hoodie",
-    "Shirt",
-    "Outer",
-    "Pants",
-    "Skirt",
-    "Dress",
+  // data dropdown
+  final List<String> _categories = [
+    'T-Shirt',
+    'Hoodie',
+    'Jacket',
+    'Shirt',
+    'Pants',
+    'Skirt',
+    'Dress',
   ];
 
-  // Size Options
-  final List<String> sizeList = ["XS", "S", "M", "L", "XL", "XXL"];
+  final List<String> _sizes = ['S', 'M', 'L', 'XL', 'XXL'];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Add Product"), centerTitle: true),
-
+      appBar: AppBar(title: const Text('Add Product')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ================= IMAGE PLACEHOLDER =================
-            GestureDetector(
-              onTap: () {
-                // Panggil function insert image milikmu di sini
-              },
-              child: Container(
-                height: 160,
-                width: double.infinity,
-                color: Colors.grey[300],
-                child: const Center(child: Icon(Icons.add_a_photo, size: 40)),
-              ),
+            // Label + TextField product name
+            const Text(
+              'Product Name',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-
-            const SizedBox(height: 20),
-
-            // ================= NAME FIELD =================
-            const Text("Product Name"),
+            const SizedBox(height: 8),
             TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                hintText: "example: y2k oversize shirt",
-                border: OutlineInputBorder(),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // ================= CATEGORY =================
-            const Text("Category"),
-            DropdownButtonFormField(
-              value: selectedCategory,
-              items: categoryList.map((item) {
-                return DropdownMenuItem(value: item, child: Text(item));
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedCategory = value!;
-                });
-              },
-              decoration: const InputDecoration(border: OutlineInputBorder()),
-            ),
-
-            const SizedBox(height: 20),
-
-            // ================= BRAND =================
-            const Text("Brand"),
-            TextField(
-              controller: brandController,
-              decoration: const InputDecoration(
-                hintText: "example: Uniqlo, H&M, Zara...",
-                border: OutlineInputBorder(),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // ================= SIZE =================
-            const Text("Size"),
-            DropdownButtonFormField(
-              value: selectedSize,
-              items: sizeList.map((item) {
-                return DropdownMenuItem(value: item, child: Text(item));
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedSize = value!;
-                });
-              },
-              decoration: const InputDecoration(border: OutlineInputBorder()),
-            ),
-
-            const SizedBox(height: 35),
-
-            // ================= BUTTONS =================
-            Row(
-              children: [
-                // Cancel Button
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      Navigator.pop(context); // balik ke homepage
-                    },
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    child: const Text("Cancel"),
-                  ),
+              controller: _nameController,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                hintText: 'e.g. Y2K Motif Oversize Shirt',
+              ),
+            ),
+            const SizedBox(height: 16),
 
-                const SizedBox(width: 15),
+            // Dropdown Category
+            const Text(
+              'Category',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: _selectedCategory,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              hint: const Text('Select Category'),
+              items: _categories
+                  .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
+                  .toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedCategory = value;
+                });
+              },
+            ),
+            const SizedBox(height: 16),
 
-                // Save Button
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // === MASUKIN LOGIC SAVE DI SINI ===
-                      // Kirim data ke database / Firebase dll
+            // TextField Brand
+            const Text(
+              'Brand',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _brandController,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                hintText: 'e.g. Zara',
+              ),
+            ),
+            const SizedBox(height: 16),
 
+            // Dropdown untuk Size
+            const Text(
+              'Size',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              value: _selectedSize,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              hint: const Text('Select Size'),
+              items: _sizes
+                  .map(
+                    (size) => DropdownMenuItem(value: size, child: Text(size)),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedSize = value;
+                });
+              },
+            ),
+            const SizedBox(height: 24),
+
+            // Cancel & Save
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+                  onPressed: () {
+                    // homepage
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    // Simpan data
+                    String name = _nameController.text.trim();
+                    String brand = _brandController.text.trim();
+                    String? category = _selectedCategory;
+                    String? size = _selectedSize;
+
+                    if (name.isEmpty ||
+                        brand.isEmpty ||
+                        category == null ||
+                        size == null) {
+                      // Validasi
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Product Saved!")),
+                        const SnackBar(content: Text('Please fill all fields')),
                       );
+                      return;
+                    }
 
-                      Navigator.pop(context); // balik ke homepage
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    child: const Text("Save"),
-                    
-                  ),
+                    // Balik ke homepage
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Save'),
                 ),
               ],
             ),
@@ -157,6 +166,5 @@ class _AddProductPageState extends State<AddProductPage> {
         ),
       ),
     );
-  
   }
 }
