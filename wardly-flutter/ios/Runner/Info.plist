@@ -53,3 +53,8 @@
 <key>NSPhotoLibraryUsageDescription</key>
 <string>We need access to photo library to add pictures to your wardrobe.</
 string>
+
+<key>NSPhotoLibraryUsageDescription</key>
+<string>Need photo library access to pick images</string>
+<key>NSCameraUsageDescription</key>
+<string>Need camera access to take photos</string>

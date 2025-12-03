@@ -13,7 +13,7 @@ dependencies:
   supabase_flutter: ^2.0.0
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.5.3
-  image_picker: ^0.8.7+4
+  image_picker: ^1,0,4
   path_provider: ^2.0.11
   firebase_core: ^4.2.1
   firebase_auth: ^6.1.2

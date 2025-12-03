@@ -1,10 +1,10 @@
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+import 'package:wardly_flutter/add_clothing_page.dart';
 import 'supabase_config.dart';
+import 'dart:io';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -163,12 +163,6 @@ class _WardlyHomeState extends State<WardlyHome> {
             onPressed: pickImageGallery,
             icon: const Icon(Icons.photo),
             label: const Text('Pick from gallery'),
-          ),
-          const SizedBox(height: 8),
-          ElevatedButton.icon(
-            onPressed: pickImageCamera,
-            icon: const Icon(Icons.camera_alt),
-            label: const Text('Take a photo'),
           ),
         ],
       ),
@@ -456,6 +450,82 @@ class _WardlyHomeState extends State<WardlyHome> {
       _index = 0;
     });
   }
+
+  void main() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AddClothingPage()),
+    );
+  }
 }
 
+// void main() {
+//   runApp(const WardlyApp());
+// }
 
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Wardrobe App',
+      theme: ThemeData(primarySwatch: Colors.teal, useMaterial3: true),
+      home: const HomePage(),
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> pickImageGallery() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      Navigator.push(
+        // ignore: use_build_context_synchronously
+        context,
+        MaterialPageRoute(
+          builder: (context) => AddClothingPage(initialImage: File(image.path)),
+        ),
+      );
+    }
+  }
+
+  Widget buildAdd() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ElevatedButton.icon(
+            onPressed: pickImageGallery,
+            icon: const Icon(Icons.photo),
+            label: const Text('Pick from gallery'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('My Wardrobe'),
+        backgroundColor: Colors.teal,
+      ),
+      body: buildAdd(),
+    );
+  }
+}

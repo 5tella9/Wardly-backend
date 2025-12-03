@@ -34,7 +34,7 @@ class _SignupPageState extends State<SignupPage> {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Signup successful! Please log in.')),
+      const SnackBar(content: Text('Signup successful! Please log in.')),
     );
     widget.onSigned?.call();
   }
