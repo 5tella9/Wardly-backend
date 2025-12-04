@@ -18,26 +18,32 @@ class _SignupPageState extends State<SignupPage> {
   bool _loading = false;
 
   void _doSignup() async {
-    setState(() => _loading = true);
-    final err = await AuthService.signup(
-      username: _userCtrl.text.trim(),
-      email: _emailCtrl.text.trim(),
-      password: _passCtrl.text,
-    );
-    setState(() => _loading = false);
+  setState(() => _loading = true);
 
-    if (!mounted) return;
+  final err = await AuthService.signup(
+    username: _userCtrl.text.trim(),
+    email: _emailCtrl.text.trim(),
+    password: _passCtrl.text,
+  );
 
-    if (err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
-      MaterialPageRoute(builder: (_) => const HomePage());
-    }
+  if (!mounted) return;
+  setState(() => _loading = false);
 
+  if (err != null) {
+   
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Signup successful! Please log in.')),
+      SnackBar(content: Text(err)),
     );
-    widget.onSigned?.call();
+    return; 
   }
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Signup successful! Please log in.')),
+  );
+
+  widget.onSigned?.call();
+}
+
 
   @override
   void dispose() {
