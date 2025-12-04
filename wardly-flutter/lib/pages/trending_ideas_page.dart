@@ -9,7 +9,6 @@ class TrendingIdea {
   final String title;
   final String category;
   final String description;
-  final int likeCount;
   final int saveCount;
 
   TrendingIdea({
@@ -18,7 +17,6 @@ class TrendingIdea {
     required this.title,
     required this.category,
     required this.description,
-    required this.likeCount,
     required this.saveCount,
   });
 
@@ -29,7 +27,6 @@ class TrendingIdea {
       title: (map['title'] ?? '') as String,
       category: (map['category'] ?? '') as String,
       description: (map['description'] ?? '') as String,
-      likeCount: (map['like_count'] ?? 0) as int,
       saveCount: (map['save_count'] ?? 0) as int,
     );
   }
@@ -44,8 +41,7 @@ class TrendingIdeasPage extends StatefulWidget {
 
 class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
   final List<String> savedIds = [];
-  final List<String> likedIds =
-      []; // ========== TAMBAHAN: Track liked items ==========
+  final List<String> likedIds = [];
   List<TrendingIdea> _trendingIdeas = [];
   bool _loading = true;
   String? _error;
@@ -69,7 +65,6 @@ class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
           .from('trending_items')
           .select()
           .eq('is_active', true)
-          .order('like_count', ascending: false)
           .order('created_at', ascending: false);
 
       final list = (data as List<dynamic>)
@@ -154,9 +149,7 @@ class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
               itemBuilder: (context, index) {
                 final idea = _trendingIdeas[index];
                 final isSaved = savedIds.contains(idea.id);
-                final isLiked = likedIds.contains(
-                  idea.id,
-                ); // ========== TAMBAHAN ==========
+                final isLiked = likedIds.contains(idea.id);
 
                 return GestureDetector(
                   onTap: () async {
@@ -166,12 +159,11 @@ class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
                         builder: (_) => IdeaDetailPage(
                           idea: idea,
                           isSaved: isSaved,
-                          isLiked: isLiked, // ========== TAMBAHAN ==========
+                          isLiked: isLiked,
                         ),
                       ),
                     );
 
-                    // ========== UBAH: Handle result dengan like status ==========
                     if (result != null && result is Map<String, dynamic>) {
                       setState(() {
                         final savedStatus = result['saved'] as bool;
@@ -254,37 +246,18 @@ class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Text(
-                          idea.category,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontSize: 12,
-                          ),
-                        ),
-                        const Spacer(),
-                        // ========== TAMBAHAN: Like count display ==========
-                        Icon(
-                          Icons.thumb_up,
-                          size: 14,
-                          color: Colors.white.withValues(alpha: 0.8),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${idea.likeCount}',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      idea.category,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-            // ========== TAMBAHAN: Like button di top left ==========
+            // Like button di top left
             Positioned(
               top: 8,
               left: 8,
@@ -374,13 +347,13 @@ class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
 class IdeaDetailPage extends StatefulWidget {
   final TrendingIdea idea;
   final bool isSaved;
-  final bool isLiked; // ========== TAMBAHAN ==========
+  final bool isLiked;
 
   const IdeaDetailPage({
     super.key,
     required this.idea,
     required this.isSaved,
-    required this.isLiked, // ========== TAMBAHAN ==========
+    required this.isLiked,
   });
 
   @override
@@ -389,13 +362,13 @@ class IdeaDetailPage extends StatefulWidget {
 
 class _IdeaDetailPageState extends State<IdeaDetailPage> {
   late bool _isSaved;
-  late bool _isLiked; // ========== TAMBAHAN ==========
+  late bool _isLiked;
 
   @override
   void initState() {
     super.initState();
     _isSaved = widget.isSaved;
-    _isLiked = widget.isLiked; // ========== TAMBAHAN ==========
+    _isLiked = widget.isLiked;
   }
 
   @override
@@ -439,16 +412,13 @@ class _IdeaDetailPageState extends State<IdeaDetailPage> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () => Navigator.pop(
-                        context,
-                        {
-                          'saved': _isSaved,
-                          'liked': _isLiked,
-                        }, // ========== UBAH ==========
-                      ),
+                      onPressed: () => Navigator.pop(context, {
+                        'saved': _isSaved,
+                        'liked': _isLiked,
+                      }),
                     ),
                     const Spacer(),
-                    // ========== TAMBAHAN: Like button ==========
+                    // Like button
                     IconButton(
                       icon: Icon(
                         _isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
@@ -517,42 +487,23 @@ class _IdeaDetailPageState extends State<IdeaDetailPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.teal,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            widget.idea.category,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.teal,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        widget.idea.category,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const Spacer(),
-                        // ========== TAMBAHAN: Like count di detail ==========
-                        Icon(
-                          Icons.thumb_up,
-                          size: 16,
-                          color: Colors.white.withValues(alpha: 0.8),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${widget.idea.likeCount} likes',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -641,7 +592,7 @@ class SavedIdeasPage extends StatelessWidget {
                         builder: (_) => IdeaDetailPage(
                           idea: idea,
                           isSaved: true,
-                          isLiked: false, // ========== TAMBAHAN ==========
+                          isLiked: false,
                         ),
                       ),
                     );
@@ -704,37 +655,14 @@ class SavedIdeasPage extends StatelessWidget {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Text(
-                                        idea.category,
-                                        style: TextStyle(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.8,
-                                          ),
-                                          fontSize: 12,
-                                        ),
+                                  Text(
+                                    idea.category,
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.8,
                                       ),
-                                      const Spacer(),
-                                      // ========== TAMBAHAN: Like count ==========
-                                      Icon(
-                                        Icons.thumb_up,
-                                        size: 12,
-                                        color: Colors.white.withValues(
-                                          alpha: 0.8,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '${idea.likeCount}',
-                                        style: TextStyle(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.8,
-                                          ),
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
+                                      fontSize: 12,
+                                    ),
                                   ),
                                 ],
                               ),
