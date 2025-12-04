@@ -94,10 +94,7 @@ class _AuthPageState extends State<AuthPage>
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _skipToApp() {
-    // Skip auth dan langsung ke app (guest mode)
-    Navigator.of(context).pushReplacementNamed('/home');
-  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -169,16 +166,7 @@ class _AuthPageState extends State<AuthPage>
             ),
 
             // Skip Button
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: TextButton(
-                onPressed: _skipToApp,
-                child: const Text(
-                  'Skip for now',
-                  style: TextStyle(color: Colors.grey, fontSize: 16),
-                ),
-              ),
-            ),
+            
           ],
         ),
       ),
