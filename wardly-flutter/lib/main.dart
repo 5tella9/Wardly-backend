@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_config.dart';
 import 'add_clothing_page.dart';
 import 'pages/opening_page.dart';
+import 'pages/profile_page.dart'; // Import ProfilePage baru
 import 'dart:io';
 
 Future<void> main() async {
@@ -73,7 +74,11 @@ class _WardlyHomeState extends State<WardlyHome> {
         child: SafeArea(
           child: IndexedStack(
             index: _index,
-            children: [buildHome(), buildAdd(), buildProfile()],
+            children: [
+              buildHome(),
+              buildAdd(),
+              const ProfilePage(),
+            ], // Ganti buildProfile jadi ProfilePage
           ),
         ),
       ),
@@ -94,18 +99,33 @@ class _WardlyHomeState extends State<WardlyHome> {
     return Column(
       children: [
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          children: [
-            'All',
-            'Pants',
-            'Skirts',
-            'Dress',
-            'Shirts',
-            'Outer',
-            'T-Shirt',
-            'Hoodie',
-          ].map((e) => Chip(label: Text(e))).toList(),
+        // Ganti Wrap jadi SingleChildScrollView biar bisa slide horizontal
+        SizedBox(
+          height: 50,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal, // ← INI YANG BIKIN HORIZONTAL
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children:
+                  [
+                        'All',
+                        'Pants',
+                        'Skirts',
+                        'Dress',
+                        'Shirts',
+                        'Outer',
+                        'T-Shirt',
+                        'Hoodie',
+                      ]
+                      .map(
+                        (e) => Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Chip(label: Text(e)),
+                        ),
+                      )
+                      .toList(),
+            ),
+          ),
         ),
         Expanded(
           child: items.isEmpty
@@ -190,134 +210,7 @@ class _WardlyHomeState extends State<WardlyHome> {
   }
 
   // ---------- PROFILE TAB + AUTH ----------
-  Widget buildProfile() {
-    final user = _client.auth.currentUser;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircleAvatar(radius: 40, child: Icon(Icons.person, size: 40)),
-            const SizedBox(height: 10),
-            Text(
-              user?.email ?? 'Not signed in',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: [
-                ElevatedButton(
-                  onPressed: _signUp,
-                  child: const Text('Sign up'),
-                ),
-                ElevatedButton(
-                  onPressed: _signIn,
-                  child: const Text('Sign in'),
-                ),
-                ElevatedButton(
-                  onPressed: user != null ? _signOut : null,
-                  child: const Text('Sign out'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => setState(() => items.clear()),
-              child: const Text('Clear wardrobe (local)'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _signUp() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-    if (email.isEmpty || password.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Use email and 6+ character password')),
-      );
-      return;
-    }
-    try {
-      await _client.auth.signUp(email: email, password: password);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Signed up! Check email if confirmation is enabled.'),
-        ),
-      );
-      setState(() {});
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Sign up error: $e')));
-    }
-  }
-
-  Future<void> _signIn() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-    if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Enter email and password')));
-      return;
-    }
-    try {
-      final res = await _client.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
-      setState(() {});
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Signed in as ${res.user?.email ?? email}')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Sign in error: $e')));
-    }
-  }
-
-  Future<void> _signOut() async {
-    try {
-      await _client.auth.signOut();
-      setState(() {});
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Signed out')));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Sign out error: $e')));
-    }
-  }
+  // DIHAPUS - Sekarang pake ProfilePage terpisah dari profile_page.dart
 
   // ---------- STORAGE + DB HELPERS ----------
   Future<String?> uploadImageToSupabase(Uint8List bytes) async {
