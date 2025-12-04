@@ -1,20 +1,27 @@
-import 'package:flutter/material.dart';
 import 'dart:typed_data';
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-class ClothingDetailPage extends StatelessWidget {
+class ClothingDetailPage extends StatefulWidget {
   final Map<String, dynamic> item;
   final VoidCallback? onDelete;
- 
 
   const ClothingDetailPage({
     super.key,
     required this.item,
     this.onDelete,
- 
   });
 
   @override
+  State<ClothingDetailPage> createState() => _ClothingDetailPageState();
+}
+
+class _ClothingDetailPageState extends State<ClothingDetailPage> {
+  bool _deleting = false;
+
+  @override
   Widget build(BuildContext context) {
+    final item = widget.item;
     final hasBytes = item.containsKey('bytes');
     final isFavorite = item['fav'] ?? false;
 
@@ -65,25 +72,38 @@ class ClothingDetailPage extends StatelessWidget {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: _deleting
+                          ? null
+                          : () => Navigator.pop(context),
                     ),
-                    
                     IconButton(
                       icon: Icon(
                         isFavorite ? Icons.favorite : Icons.favorite_border,
                         color: isFavorite ? Colors.red : Colors.white,
                       ),
-                      onPressed: () {
-                        // Toggle favorite akan di-handle di parent
-                        Navigator.pop(context, {'action': 'toggleFavorite'});
-                      },
+                      onPressed: _deleting
+                          ? null
+                          : () {
+                              Navigator.pop(
+                                context,
+                                {'action': 'toggleFavorite'},
+                              );
+                            },
                     ),
-                    if (onDelete != null)
+                    if (widget.onDelete != null)
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.white),
-                        onPressed: () {
-                          _showDeleteConfirmation(context);
-                        },
+                        onPressed:
+                            _deleting ? null : () => _showDeleteConfirmation(context),
+                      ),
+                    if (_deleting)
+                      const Padding(
+                        padding: EdgeInsets.only(left: 8.0),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
                       ),
                   ],
                 ),
@@ -137,7 +157,9 @@ class ClothingDetailPage extends StatelessWidget {
                             child: _buildInfoCard(
                               icon: Icons.category,
                               label: 'Category',
-                              value: item['type'] ?? item['category'] ?? 'N/A',
+                              value: item['type'] ??
+                                  item['category'] ??
+                                  'N/A',
                               color: Colors.blue,
                             ),
                           ),
@@ -232,26 +254,75 @@ class ClothingDetailPage extends StatelessWidget {
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Delete Item'),
-          content: const Text('Are you sure you want to delete this item?'),
+          content:
+              const Text('Are you sure you want to delete this item?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext); // Close dialog
-                Navigator.pop(context, {
-                  'action': 'delete',
-                }); // Close detail page
-                onDelete?.call();
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              onPressed: _deleting
+                  ? null
+                  : () async {
+                      Navigator.pop(dialogContext); // close dialog
+                      await _handleDelete();         // delete in supabase
+                    },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
               child: const Text('Delete'),
             ),
           ],
         );
       },
     );
+  }
+
+  Future<void> _handleDelete() async {
+    setState(() => _deleting = true);
+
+    final client = Supabase.instance.client;
+    final item = widget.item;
+
+    final id = item['id'];
+    // Adjust this: use the column you actually store the path in
+    final dynamic rawPath = item['image_path'] ?? item['image_url'];
+    final String? imagePath =
+        rawPath != null ? rawPath.toString() : null;
+
+    try {
+      // 1) Delete image from Storage (if we have a path)
+      if (imagePath != null && imagePath.isNotEmpty) {
+        await client.storage.from('wardrobe').remove([imagePath]);
+      }
+
+      // 2) Delete DB row from wardrobe_items
+      if (id != null) {
+        await client
+            .from('wardrobe_items')
+            .delete()
+            .eq('id', id);
+      }
+
+      // 3) Notify parent + pop page
+      widget.onDelete?.call();
+
+      if (!mounted) return;
+
+      Navigator.pop(context, {
+        'action': 'deleted',
+        'id': id,
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _deleting = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete item: $e'),
+        ),
+      );
+    }
   }
 }
