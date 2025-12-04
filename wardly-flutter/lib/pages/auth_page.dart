@@ -94,8 +94,6 @@ class _AuthPageState extends State<AuthPage>
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -166,7 +164,6 @@ class _AuthPageState extends State<AuthPage>
             ),
 
             // Skip Button
-            
           ],
         ),
       ),
@@ -205,16 +202,6 @@ class _AuthPageState extends State<AuthPage>
               fillColor: Colors.grey[50],
             ),
             obscureText: true,
-          ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () {
-                _showSnackBar('Password reset coming soon!');
-              },
-              child: const Text('Forgot password?'),
-            ),
           ),
           const SizedBox(height: 24),
           _isLoading

@@ -289,6 +289,7 @@ class _ClothingDetailPageState extends State<ClothingDetailPage> {
     // Adjust this: use the column you actually store the path in
     final dynamic rawPath = item['image_path'] ?? item['image_url'];
     final String? imagePath =
+        // ignore: prefer_null_aware_operators
         rawPath != null ? rawPath.toString() : null;
 
     try {
