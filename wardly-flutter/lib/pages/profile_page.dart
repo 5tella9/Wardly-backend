@@ -1,4 +1,4 @@
-// ignore_for_file: unnecessary_to_list_in_spreads
+// ignore_for_file: unnecessary_to_list_in_spreads, deprecated_member_use
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -208,54 +208,6 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 20),
           ],
 
-          // Settings & Actions
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.settings, color: Colors.teal),
-                  title: const Text('Settings'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Settings coming soon!')),
-                    );
-                  },
-                ),
-
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.info_outline, color: Colors.teal),
-                  title: const Text('About'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    showAboutDialog(
-                      context: context,
-                      applicationName: 'WARDLY',
-                      applicationVersion: '1.0.0',
-                      applicationIcon: const Icon(
-                        Icons.checkroom,
-                        size: 40,
-                        color: Colors.teal,
-                      ),
-                      children: [
-                        const Text(
-                          'Your Personal Wardrobe Manager\n\nManage your clothing collection with ease.',
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
           // Sign Out Button
           if (user != null)
             SizedBox(
@@ -292,7 +244,6 @@ class _ProfilePageState extends State<ProfilePage> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            // ignore: deprecated_member_use
             color: color.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
@@ -336,4 +287,3 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 }
-// ignore: unused_import
