@@ -5,8 +5,7 @@ import 'dart:io';
 class AddClothingPage extends StatefulWidget {
   final File? initialImage;
 
-  // ignore: use_super_parameters
-  const AddClothingPage({Key? key, this.initialImage}) : super(key: key);
+  const AddClothingPage({super.key, this.initialImage});
 
   @override
   State<AddClothingPage> createState() => _AddClothingPageState();
@@ -38,7 +37,6 @@ class _AddClothingPageState extends State<AddClothingPage> {
   @override
   void initState() {
     super.initState();
-    // Set image dari parameter kalau ada
     _image = widget.initialImage;
   }
 
@@ -87,7 +85,6 @@ class _AddClothingPageState extends State<AddClothingPage> {
   }
 
   void _saveClothing() {
-    // Validasi input
     if (_image == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Pilih gambar terlebih dahulu')),
@@ -109,19 +106,21 @@ class _AddClothingPageState extends State<AddClothingPage> {
       return;
     }
 
-    // Simpan data (contoh dengan print)
-    debugPrint('Nama: ${_nameController.text}');
-    debugPrint('Category: $_selectedCategory');
-    debugPrint('Brand: ${_brandController.text}');
-    debugPrint('Size: $_selectedSize');
-    debugPrint('Image Path: ${_image!.path}');
+    // Return data ke main page
+    Navigator.pop(context, {
+      'name': _nameController.text,
+      'category': _selectedCategory,
+      'brand': _brandController.text,
+      'size': _selectedSize,
+      'imagePath': _image!.path,
+    });
 
-    // Kembali ke homepage
-    Navigator.pop(context);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Success!')));
   }
 
   void _cancel() {
-    // Kembali ke homepage tanpa menyimpan
     Navigator.pop(context);
   }
 
@@ -136,7 +135,7 @@ class _AddClothingPageState extends State<AddClothingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tambah Baju'),
+        title: const Text('Add Clothing'),
         backgroundColor: Colors.teal,
       ),
       body: SingleChildScrollView(
@@ -144,7 +143,6 @@ class _AddClothingPageState extends State<AddClothingPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image Picker
             Center(
               child: GestureDetector(
                 onTap: _pickImage,
@@ -167,7 +165,7 @@ class _AddClothingPageState extends State<AddClothingPage> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Tap untuk pilih gambar',
+                              'Tap to change image',
                               style: TextStyle(color: Colors.grey[600]),
                             ),
                           ],
@@ -180,17 +178,15 @@ class _AddClothingPageState extends State<AddClothingPage> {
               ),
             ),
             const SizedBox(height: 24),
-
-            // Label Nama
             const Text(
-              'Nama Baju',
+              'Clothing Name',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _nameController,
               decoration: InputDecoration(
-                hintText: 'Contoh: Y2K Motif Oversize Shirt',
+                hintText: 'e.g Y2K Oversize Shirt',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -199,8 +195,6 @@ class _AddClothingPageState extends State<AddClothingPage> {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Category Dropdown
             const Text(
               'Category',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -232,8 +226,6 @@ class _AddClothingPageState extends State<AddClothingPage> {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Brand TextField
             const Text(
               'Brand',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -242,7 +234,7 @@ class _AddClothingPageState extends State<AddClothingPage> {
             TextField(
               controller: _brandController,
               decoration: InputDecoration(
-                hintText: 'Contoh: Uniqlo, H&M, Zara',
+                hintText: 'e.g Uniqlo, H&M, Zara',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -251,8 +243,6 @@ class _AddClothingPageState extends State<AddClothingPage> {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Size Dropdown
             const Text(
               'Size',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -284,8 +274,6 @@ class _AddClothingPageState extends State<AddClothingPage> {
               ),
             ),
             const SizedBox(height: 32),
-
-            // Buttons
             Row(
               children: [
                 Expanded(

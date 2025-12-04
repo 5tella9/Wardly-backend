@@ -73,8 +73,9 @@ class _IntroScreenState extends State<IntroScreen>
     super.dispose();
   }
 
-  void _goToSurvey() {
-    Navigator.of(context).pushReplacementNamed('HomePage');
+  void _goToHome() {
+    // Navigate ke WardlyHome (main app)
+    Navigator.of(context).pushReplacementNamed('/home');
   }
 
   @override
@@ -86,7 +87,7 @@ class _IntroScreenState extends State<IntroScreen>
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             children: [
-              const SizedBox(height: 180), // moves text upward slightly
+              const SizedBox(height: 180),
               // Title
               FadeTransition(
                 opacity: _titleFade,
@@ -140,7 +141,7 @@ class _IntroScreenState extends State<IntroScreen>
                         ),
                         elevation: 0,
                       ),
-                      onPressed: _goToSurvey, // ⬅️ changed to go to /survey
+                      onPressed: _goToHome,
                       child: Text(
                         'Get Started',
                         style: GoogleFonts.aBeeZee(

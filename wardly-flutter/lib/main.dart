@@ -2,18 +2,17 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:wardly_flutter/add_clothing_page.dart';
 import 'supabase_config.dart';
+import 'add_clothing_page.dart';
+import 'pages/opening_page.dart';
 import 'dart:io';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
-
   runApp(const WardlyApp());
 }
 
@@ -26,7 +25,8 @@ class WardlyApp extends StatelessWidget {
       title: 'WARDLY',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: const WardlyHome(),
+      home: const IntroScreen(), // Start dengan opening page
+      routes: {'/home': (context) => const WardlyHome()},
     );
   }
 }
@@ -42,7 +42,6 @@ class _WardlyHomeState extends State<WardlyHome> {
   int _index = 0;
   final List<Map<String, dynamic>> items = [];
   final ImagePicker _picker = ImagePicker();
-
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -91,7 +90,6 @@ class _WardlyHomeState extends State<WardlyHome> {
   }
 
   // ---------- HOME TAB ----------
-
   Widget buildHome() {
     return Column(
       children: [
@@ -110,50 +108,60 @@ class _WardlyHomeState extends State<WardlyHome> {
           ].map((e) => Chip(label: Text(e))).toList(),
         ),
         Expanded(
-          child: GridView.builder(
-            padding: const EdgeInsets.all(12),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-            ),
-            itemCount: items.length,
-            itemBuilder: (_, i) {
-              final it = items[i];
-              final hasBytes = it.containsKey('bytes');
-              final img = hasBytes
-                  ? Image.memory(it['bytes'] as Uint8List, fit: BoxFit.cover)
-                  : Container(color: Colors.grey);
-
-              return Stack(
-                children: [
-                  Positioned.fill(child: img),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: IconButton(
-                      icon: Icon(
-                        it['fav'] ? Icons.favorite : Icons.favorite_border,
-                        color: Colors.red,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          items[i]['fav'] = !items[i]['fav'];
-                        });
-                      },
-                    ),
+          child: items.isEmpty
+              ? const Center(
+                  child: Text(
+                    'No items yet. Add some clothes!',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
                   ),
-                ],
-              );
-            },
-          ),
+                )
+              : GridView.builder(
+                  padding: const EdgeInsets.all(12),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: items.length,
+                  itemBuilder: (_, i) {
+                    final it = items[i];
+                    final hasBytes = it.containsKey('bytes');
+                    final img = hasBytes
+                        ? Image.memory(
+                            it['bytes'] as Uint8List,
+                            fit: BoxFit.cover,
+                          )
+                        : Container(color: Colors.grey);
+                    return Stack(
+                      children: [
+                        Positioned.fill(child: img),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: IconButton(
+                            icon: Icon(
+                              it['fav']
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              color: Colors.red,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                items[i]['fav'] = !items[i]['fav'];
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
         ),
       ],
     );
   }
 
   // ---------- ADD TAB ----------
-
   Widget buildAdd() {
     return Center(
       child: Column(
@@ -163,6 +171,18 @@ class _WardlyHomeState extends State<WardlyHome> {
             onPressed: pickImageGallery,
             icon: const Icon(Icons.photo),
             label: const Text('Pick from gallery'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: pickImageCamera,
+            icon: const Icon(Icons.camera_alt),
+            label: const Text('Take a photo'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            ),
           ),
         ],
       ),
@@ -170,10 +190,8 @@ class _WardlyHomeState extends State<WardlyHome> {
   }
 
   // ---------- PROFILE TAB + AUTH ----------
-
   Widget buildProfile() {
     final user = _client.auth.currentUser;
-
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Center(
@@ -187,8 +205,6 @@ class _WardlyHomeState extends State<WardlyHome> {
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 16),
-
-            // Auth form
             TextField(
               controller: _emailController,
               decoration: const InputDecoration(
@@ -224,32 +240,9 @@ class _WardlyHomeState extends State<WardlyHome> {
               ],
             ),
             const SizedBox(height: 20),
-
             ElevatedButton(
               onPressed: () => setState(() => items.clear()),
               child: const Text('Clear wardrobe (local)'),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              onPressed: () => showDialog(
-                context: context,
-                builder: (_) => AlertDialog(
-                  title: const Text('Delete account'),
-                  content: const Text('This is demo UI only.'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('OK'),
-                    ),
-                  ],
-                ),
-              ),
-              child: const Text('Delete account'),
             ),
           ],
         ),
@@ -260,25 +253,23 @@ class _WardlyHomeState extends State<WardlyHome> {
   Future<void> _signUp() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
-
     if (email.isEmpty || password.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Use email and 6+ character password')),
       );
       return;
     }
-
     try {
       await _client.auth.signUp(email: email, password: password);
-
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Signed up. If email confirmation is on, check inbox.'),
+          content: Text('Signed up! Check email if confirmation is enabled.'),
         ),
       );
-      setState(() {}); // refresh to show user if auto-logged in
+      setState(() {});
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Sign up error: $e')));
@@ -288,25 +279,24 @@ class _WardlyHomeState extends State<WardlyHome> {
   Future<void> _signIn() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
-
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Enter email and password')));
       return;
     }
-
     try {
       final res = await _client.auth.signInWithPassword(
         email: email,
         password: password,
       );
-      setState(() {}); // refresh UI with logged-in user
+      setState(() {});
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Signed in as ${res.user?.email ?? email}')),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Sign in error: $e')));
@@ -322,6 +312,7 @@ class _WardlyHomeState extends State<WardlyHome> {
         context,
       ).showSnackBar(const SnackBar(content: Text('Signed out')));
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Sign out error: $e')));
@@ -329,31 +320,24 @@ class _WardlyHomeState extends State<WardlyHome> {
   }
 
   // ---------- STORAGE + DB HELPERS ----------
-
   Future<String?> uploadImageToSupabase(Uint8List bytes) async {
     final user = _client.auth.currentUser;
-
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Sign in first to save items')),
       );
       return null;
     }
-
     final fileName = '${user.id}/${DateTime.now().millisecondsSinceEpoch}.jpg';
-
     try {
       await _client.storage.from('wardrobe').uploadBinary(fileName, bytes);
-
       final imageUrl = _client.storage.from('wardrobe').getPublicUrl(fileName);
-
       return imageUrl;
     } catch (e) {
       if (!mounted) return null;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Upload error: $e')));
-
       return null;
     }
   }
@@ -362,22 +346,24 @@ class _WardlyHomeState extends State<WardlyHome> {
     required String imageUrl,
     String category = 'Top',
     String? title,
+    String? brand,
+    String? size,
   }) async {
     final user = _client.auth.currentUser;
-
     if (user == null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Sign in first')));
       return;
     }
-
     try {
       await _client.from('wardrobe_items').insert({
         'user_id': user.id,
         'image_url': imageUrl,
         'category': category,
         'title': title ?? 'Untitled item',
+        'brand': brand,
+        'size': size,
       });
     } catch (e) {
       if (!mounted) return;
@@ -388,144 +374,99 @@ class _WardlyHomeState extends State<WardlyHome> {
   }
 
   // ---------- IMAGE PICKERS ----------
-
   Future<void> pickImageGallery() async {
-    if (_client.auth.currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sign in to add wardrobe items')),
-      );
-      return;
-    }
-
     final photo = await _picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 80,
     );
     if (photo == null) return;
 
-    final bytes = await photo.readAsBytes();
+    // Navigate ke AddClothingPage
+    if (!mounted) return;
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddClothingPage(initialImage: File(photo.path)),
+      ),
+    );
 
-    final imageUrl = await uploadImageToSupabase(bytes);
-    if (imageUrl != null) {
-      await insertWardrobeItem(
-        imageUrl: imageUrl,
-        category: 'Top',
-        title: 'New item',
-      );
+    // Kalau ada result (user save), tambahkan ke list
+    if (result != null) {
+      final bytes = await photo.readAsBytes();
+
+      // Upload ke Supabase kalau user login
+      if (_client.auth.currentUser != null) {
+        final imageUrl = await uploadImageToSupabase(bytes);
+        if (imageUrl != null) {
+          await insertWardrobeItem(
+            imageUrl: imageUrl,
+            category: result['category'] ?? 'Top',
+            title: result['name'] ?? 'New item',
+            brand: result['brand'],
+            size: result['size'],
+          );
+        }
+      }
+
+      setState(() {
+        items.insert(0, {
+          'bytes': bytes,
+          'fav': false,
+          'type': result['category'] ?? 'Top',
+          'name': result['name'],
+          'brand': result['brand'],
+          'size': result['size'],
+        });
+        _index = 0; // Balik ke Home tab
+      });
     }
-
-    setState(() {
-      items.insert(0, {'bytes': bytes, 'fav': false, 'type': 'Top'});
-      _index = 0;
-    });
   }
 
   Future<void> pickImageCamera() async {
-    if (_client.auth.currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sign in to add wardrobe items')),
-      );
-      return;
-    }
-
     final photo = await _picker.pickImage(
       source: ImageSource.camera,
       imageQuality: 80,
     );
     if (photo == null) return;
 
-    final bytes = await photo.readAsBytes();
-
-    final imageUrl = await uploadImageToSupabase(bytes);
-    if (imageUrl != null) {
-      await insertWardrobeItem(
-        imageUrl: imageUrl,
-        category: 'Top',
-        title: 'New item',
-      );
-    }
-
-    setState(() {
-      items.insert(0, {'bytes': bytes, 'fav': false, 'type': 'Top'});
-      _index = 0;
-    });
-  }
-
-  void main() {
-    Navigator.push(
+    // Navigate ke AddClothingPage
+    if (!mounted) return;
+    final result = await Navigator.push<Map<String, dynamic>>(
       context,
-      MaterialPageRoute(builder: (context) => const AddClothingPage()),
+      MaterialPageRoute(
+        builder: (context) => AddClothingPage(initialImage: File(photo.path)),
+      ),
     );
-  }
-}
 
-// void main() {
-//   runApp(const WardlyApp());
-// }
+    // Kalau ada result (user save), tambahkan ke list
+    if (result != null) {
+      final bytes = await photo.readAsBytes();
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+      // Upload ke Supabase kalau user login
+      if (_client.auth.currentUser != null) {
+        final imageUrl = await uploadImageToSupabase(bytes);
+        if (imageUrl != null) {
+          await insertWardrobeItem(
+            imageUrl: imageUrl,
+            category: result['category'] ?? 'Top',
+            title: result['name'] ?? 'New item',
+            brand: result['brand'],
+            size: result['size'],
+          );
+        }
+      }
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Wardrobe App',
-      theme: ThemeData(primarySwatch: Colors.teal, useMaterial3: true),
-      home: const HomePage(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
-}
-
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  final ImagePicker _picker = ImagePicker();
-
-  Future<void> pickImageGallery() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      Navigator.push(
-        // ignore: use_build_context_synchronously
-        context,
-        MaterialPageRoute(
-          builder: (context) => AddClothingPage(initialImage: File(image.path)),
-        ),
-      );
+      setState(() {
+        items.insert(0, {
+          'bytes': bytes,
+          'fav': false,
+          'type': result['category'] ?? 'Top',
+          'name': result['name'],
+          'brand': result['brand'],
+          'size': result['size'],
+        });
+        _index = 0; // Balik ke Home tab
+      });
     }
-  }
-
-  Widget buildAdd() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ElevatedButton.icon(
-            onPressed: pickImageGallery,
-            icon: const Icon(Icons.photo),
-            label: const Text('Pick from gallery'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Wardrobe'),
-        backgroundColor: Colors.teal,
-      ),
-      body: buildAdd(),
-    );
   }
 }
