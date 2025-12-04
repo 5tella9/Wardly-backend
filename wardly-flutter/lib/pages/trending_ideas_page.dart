@@ -10,6 +10,7 @@ class TrendingIdea {
   final String category;
   final String description;
   final int saveCount;
+  final int likeCount;
 
   TrendingIdea({
     required this.id,
@@ -18,6 +19,7 @@ class TrendingIdea {
     required this.category,
     required this.description,
     required this.saveCount,
+    required this.likeCount,
   });
 
   factory TrendingIdea.fromMap(Map<String, dynamic> map) {
@@ -28,6 +30,7 @@ class TrendingIdea {
       category: (map['category'] ?? '') as String,
       description: (map['description'] ?? '') as String,
       saveCount: (map['save_count'] ?? 0) as int,
+      likeCount: (map['like_count'] ?? 0) as int,
     );
   }
 }
@@ -65,6 +68,7 @@ class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
           .from('trending_items')
           .select()
           .eq('is_active', true)
+          .order('like_count', ascending: false)
           .order('created_at', ascending: false);
 
       final list = (data as List<dynamic>)
@@ -85,10 +89,81 @@ class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
     }
   }
 
+  Future<void> _toggleLike(TrendingIdea idea, bool isCurrentlyLiked) async {
+    final index = _trendingIdeas.indexWhere((i) => i.id == idea.id);
+    if (index == -1) return;
+
+    final delta = isCurrentlyLiked ? -1 : 1;
+    final newCount =
+        (idea.likeCount + delta).clamp(0, 1 << 30) as int; // cast to int
+
+    // optimistic UI update
+    final updated = TrendingIdea(
+      id: idea.id,
+      imageUrl: idea.imageUrl,
+      title: idea.title,
+      category: idea.category,
+      description: idea.description,
+      saveCount: idea.saveCount,
+      likeCount: newCount,
+    );
+
+    setState(() {
+      _trendingIdeas[index] = updated;
+      if (isCurrentlyLiked) {
+        likedIds.remove(idea.id);
+      } else {
+        likedIds.add(idea.id);
+      }
+    });
+
+    try {
+      await _client
+          .from('trending_items')
+          .update({'like_count': newCount})
+          .eq('id', idea.id);
+
+      // keep list sorted by like_count
+      _trendingIdeas.sort((a, b) {
+        final c = b.likeCount.compareTo(a.likeCount);
+        if (c != 0) return c;
+        return b.id.compareTo(a.id);
+      });
+
+      setState(() {});
+    } catch (e) {
+      // rollback on error
+      final rolledBack = TrendingIdea(
+        id: idea.id,
+        imageUrl: idea.imageUrl,
+        title: idea.title,
+        category: idea.category,
+        description: idea.description,
+        saveCount: idea.saveCount,
+        likeCount: idea.likeCount,
+      );
+
+      setState(() {
+        _trendingIdeas[index] = rolledBack;
+        if (isCurrentlyLiked) {
+          likedIds.add(idea.id);
+        } else {
+          likedIds.remove(idea.id);
+        }
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update like: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
     if (_error != null) {
@@ -246,18 +321,37 @@ class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      idea.category,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontSize: 12,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          idea.category,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 12,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            const Icon(Icons.thumb_up,
+                                size: 14, color: Colors.white),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${idea.likeCount}',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.9),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
             ),
-            // Like button di top left
+            // like button (top left)
             Positioned(
               top: 8,
               left: 8,
@@ -278,26 +372,23 @@ class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
                     color: isLiked ? const Color(0xFFFFD700) : Colors.grey[700],
                     size: 20,
                   ),
-                  onPressed: () {
-                    setState(() {
-                      if (isLiked) {
-                        likedIds.remove(idea.id);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Like removed')),
-                        );
-                      } else {
-                        likedIds.add(idea.id);
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(const SnackBar(content: Text('Liked!')));
-                      }
-                    });
+                  onPressed: () async {
+                    final wasLiked = isLiked;
+                    await _toggleLike(idea, isLiked);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content:
+                            Text(wasLiked ? 'Like removed' : 'Liked!'),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
                   },
                   padding: const EdgeInsets.all(8),
                 ),
               ),
             ),
-            // Save button di top right
+            // save button (top right)
             Positioned(
               top: 8,
               right: 8,
@@ -323,13 +414,14 @@ class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
                       if (isSaved) {
                         savedIds.remove(idea.id);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Removed from saved')),
+                          const SnackBar(
+                              content: Text('Removed from saved')),
                         );
                       } else {
                         savedIds.add(idea.id);
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(const SnackBar(content: Text('Saved!')));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Saved!')),
+                        );
                       }
                     });
                   },
@@ -386,7 +478,8 @@ class _IdeaDetailPageState extends State<IdeaDetailPage> {
                 fit: BoxFit.contain,
                 errorBuilder: (_, __, ___) => Container(
                   color: Colors.grey[300],
-                  child: const Icon(Icons.image, size: 100, color: Colors.grey),
+                  child:
+                      const Icon(Icons.image, size: 100, color: Colors.grey),
                 ),
               ),
             ),
@@ -397,7 +490,8 @@ class _IdeaDetailPageState extends State<IdeaDetailPage> {
             right: 0,
             child: SafeArea(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
@@ -411,17 +505,19 @@ class _IdeaDetailPageState extends State<IdeaDetailPage> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
+                      icon:
+                          const Icon(Icons.close, color: Colors.white),
                       onPressed: () => Navigator.pop(context, {
                         'saved': _isSaved,
                         'liked': _isLiked,
                       }),
                     ),
                     const Spacer(),
-                    // Like button
                     IconButton(
                       icon: Icon(
-                        _isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
+                        _isLiked
+                            ? Icons.thumb_up
+                            : Icons.thumb_up_outlined,
                         color: _isLiked
                             ? const Color(0xFFFFD700)
                             : Colors.white,
@@ -430,7 +526,8 @@ class _IdeaDetailPageState extends State<IdeaDetailPage> {
                         setState(() => _isLiked = !_isLiked);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(_isLiked ? 'Liked!' : 'Like removed'),
+                            content: Text(
+                                _isLiked ? 'Liked!' : 'Like removed'),
                             duration: const Duration(seconds: 1),
                           ),
                         );
@@ -438,7 +535,9 @@ class _IdeaDetailPageState extends State<IdeaDetailPage> {
                     ),
                     IconButton(
                       icon: Icon(
-                        _isSaved ? Icons.bookmark : Icons.bookmark_border,
+                        _isSaved
+                            ? Icons.bookmark
+                            : Icons.bookmark_border,
                         color: Colors.white,
                       ),
                       onPressed: () {
@@ -446,7 +545,9 @@ class _IdeaDetailPageState extends State<IdeaDetailPage> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              _isSaved ? 'Saved!' : 'Removed from saved',
+                              _isSaved
+                                  ? 'Saved!'
+                                  : 'Removed from saved',
                             ),
                             duration: const Duration(seconds: 1),
                           ),
@@ -457,7 +558,8 @@ class _IdeaDetailPageState extends State<IdeaDetailPage> {
                       icon: const Icon(Icons.share, color: Colors.white),
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Share coming soon!')),
+                          const SnackBar(
+                              content: Text('Share coming soon!')),
                         );
                       },
                     ),
@@ -518,7 +620,8 @@ class _IdeaDetailPageState extends State<IdeaDetailPage> {
                     Text(
                       widget.idea.description,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
+                        color:
+                            Colors.white.withValues(alpha: 0.8),
                         fontSize: 14,
                       ),
                     ),
@@ -545,9 +648,8 @@ class SavedIdeasPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final savedIdeas = allIdeas
-        .where((idea) => savedIds.contains(idea.id))
-        .toList();
+    final savedIdeas =
+        allIdeas.where((idea) => savedIds.contains(idea.id)).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -575,7 +677,8 @@ class SavedIdeasPage extends StatelessWidget {
             )
           : GridView.builder(
               padding: const EdgeInsets.all(12),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
@@ -642,7 +745,8 @@ class SavedIdeasPage extends StatelessWidget {
                                 ),
                               ),
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     idea.title,
