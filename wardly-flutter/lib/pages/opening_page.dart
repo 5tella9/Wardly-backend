@@ -101,7 +101,7 @@ class _IntroScreenState extends State<IntroScreen>
                   child: Text(
                     'WARDLY',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.adventPro(
+                    style: GoogleFonts.robotoSlab(
                       color: Colors.lightBlueAccent,
                       fontSize: 64,
                       fontWeight: FontWeight.w600,

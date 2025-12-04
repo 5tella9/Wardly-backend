@@ -118,7 +118,12 @@ class _AuthPageState extends State<AuthPage>
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: Colors.lightBlueAccent,
+                      color: Color.from(
+                        alpha: 1,
+                        red: 0.251,
+                        green: 0.769,
+                        blue: 1,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -140,7 +145,7 @@ class _AuthPageState extends State<AuthPage>
               child: TabBar(
                 controller: _tabController,
                 indicator: BoxDecoration(
-                  color: const Color(0xFF00221C),
+                  color: const Color(0xFF40C4FF),
                   borderRadius: BorderRadius.circular(30),
                 ),
                 labelColor: Colors.white,
@@ -209,8 +214,8 @@ class _AuthPageState extends State<AuthPage>
               : ElevatedButton(
                   onPressed: _signIn,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00221C),
-                    foregroundColor: Colors.white,
+                    backgroundColor: const Color(0xFF40C4FF),
+                    foregroundColor: const Color.fromARGB(255, 255, 255, 255),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -279,7 +284,7 @@ class _AuthPageState extends State<AuthPage>
               : ElevatedButton(
                   onPressed: _signUp,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00221C),
+                    backgroundColor: const Color(0xFF40C4FF),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(

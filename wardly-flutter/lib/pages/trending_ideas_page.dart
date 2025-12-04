@@ -1,13 +1,7 @@
-
-
 // ignore_for_file: unnecessary_underscores
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-
-// ignore: unused_import
-import '../supabase_config.dart';
 
 class TrendingIdea {
   final String id;
@@ -50,6 +44,8 @@ class TrendingIdeasPage extends StatefulWidget {
 
 class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
   final List<String> savedIds = [];
+  final List<String> likedIds =
+      []; // ========== TAMBAHAN: Track liked items ==========
   List<TrendingIdea> _trendingIdeas = [];
   bool _loading = true;
   String? _error;
@@ -97,16 +93,12 @@ class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Trending Outfits'),
-        ),
+        appBar: AppBar(title: const Text('Trending Outfits')),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -120,7 +112,7 @@ class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
             ],
           ),
         ),
-      );                
+      );
     }
 
     return Scaffold(
@@ -138,8 +130,10 @@ class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) =>
-                      SavedIdeasPage(savedIds: savedIds, allIdeas: _trendingIdeas),
+                  builder: (_) => SavedIdeasPage(
+                    savedIds: savedIds,
+                    allIdeas: _trendingIdeas,
+                  ),
                 ),
               );
             },
@@ -160,35 +154,51 @@ class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
               itemBuilder: (context, index) {
                 final idea = _trendingIdeas[index];
                 final isSaved = savedIds.contains(idea.id);
+                final isLiked = likedIds.contains(
+                  idea.id,
+                ); // ========== TAMBAHAN ==========
 
                 return GestureDetector(
                   onTap: () async {
                     final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>
-                            IdeaDetailPage(idea: idea, isSaved: isSaved),
+                        builder: (_) => IdeaDetailPage(
+                          idea: idea,
+                          isSaved: isSaved,
+                          isLiked: isLiked, // ========== TAMBAHAN ==========
+                        ),
                       ),
                     );
 
-                    if (result != null && result is bool) {
+                    // ========== UBAH: Handle result dengan like status ==========
+                    if (result != null && result is Map<String, dynamic>) {
                       setState(() {
-                        if (result && !savedIds.contains(idea.id)) {
+                        final savedStatus = result['saved'] as bool;
+                        final likedStatus = result['liked'] as bool;
+
+                        if (savedStatus && !savedIds.contains(idea.id)) {
                           savedIds.add(idea.id);
-                        } else if (!result) {
+                        } else if (!savedStatus) {
                           savedIds.remove(idea.id);
+                        }
+
+                        if (likedStatus && !likedIds.contains(idea.id)) {
+                          likedIds.add(idea.id);
+                        } else if (!likedStatus) {
+                          likedIds.remove(idea.id);
                         }
                       });
                     }
                   },
-                  child: _buildIdeaCard(idea, isSaved),
+                  child: _buildIdeaCard(idea, isSaved, isLiked),
                 );
               },
             ),
     );
   }
 
-  Widget _buildIdeaCard(TrendingIdea idea, bool isSaved) {
+  Widget _buildIdeaCard(TrendingIdea idea, bool isSaved, bool isLiked) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -244,17 +254,77 @@ class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      idea.category,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontSize: 12,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          idea.category,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 12,
+                          ),
+                        ),
+                        const Spacer(),
+                        // ========== TAMBAHAN: Like count display ==========
+                        Icon(
+                          Icons.thumb_up,
+                          size: 14,
+                          color: Colors.white.withValues(alpha: 0.8),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${idea.likeCount}',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
             ),
+            // ========== TAMBAHAN: Like button di top left ==========
+            Positioned(
+              top: 8,
+              left: 8,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
+                    color: isLiked ? const Color(0xFFFFD700) : Colors.grey[700],
+                    size: 20,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      if (isLiked) {
+                        likedIds.remove(idea.id);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Like removed')),
+                        );
+                      } else {
+                        likedIds.add(idea.id);
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(const SnackBar(content: Text('Liked!')));
+                      }
+                    });
+                  },
+                  padding: const EdgeInsets.all(8),
+                ),
+              ),
+            ),
+            // Save button di top right
             Positioned(
               top: 8,
               right: 8,
@@ -273,6 +343,7 @@ class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
                   icon: Icon(
                     isSaved ? Icons.bookmark : Icons.bookmark_border,
                     color: isSaved ? Colors.teal : Colors.grey[700],
+                    size: 20,
                   ),
                   onPressed: () {
                     setState(() {
@@ -289,6 +360,7 @@ class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
                       }
                     });
                   },
+                  padding: const EdgeInsets.all(8),
                 ),
               ),
             ),
@@ -302,8 +374,14 @@ class _TrendingIdeasPageState extends State<TrendingIdeasPage> {
 class IdeaDetailPage extends StatefulWidget {
   final TrendingIdea idea;
   final bool isSaved;
+  final bool isLiked; // ========== TAMBAHAN ==========
 
-  const IdeaDetailPage({super.key, required this.idea, required this.isSaved});
+  const IdeaDetailPage({
+    super.key,
+    required this.idea,
+    required this.isSaved,
+    required this.isLiked, // ========== TAMBAHAN ==========
+  });
 
   @override
   State<IdeaDetailPage> createState() => _IdeaDetailPageState();
@@ -311,11 +389,13 @@ class IdeaDetailPage extends StatefulWidget {
 
 class _IdeaDetailPageState extends State<IdeaDetailPage> {
   late bool _isSaved;
+  late bool _isLiked; // ========== TAMBAHAN ==========
 
   @override
   void initState() {
     super.initState();
     _isSaved = widget.isSaved;
+    _isLiked = widget.isLiked; // ========== TAMBAHAN ==========
   }
 
   @override
@@ -359,9 +439,33 @@ class _IdeaDetailPageState extends State<IdeaDetailPage> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () => Navigator.pop(context, _isSaved),
+                      onPressed: () => Navigator.pop(
+                        context,
+                        {
+                          'saved': _isSaved,
+                          'liked': _isLiked,
+                        }, // ========== UBAH ==========
+                      ),
                     ),
                     const Spacer(),
+                    // ========== TAMBAHAN: Like button ==========
+                    IconButton(
+                      icon: Icon(
+                        _isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
+                        color: _isLiked
+                            ? const Color(0xFFFFD700)
+                            : Colors.white,
+                      ),
+                      onPressed: () {
+                        setState(() => _isLiked = !_isLiked);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(_isLiked ? 'Liked!' : 'Like removed'),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      },
+                    ),
                     IconButton(
                       icon: Icon(
                         _isSaved ? Icons.bookmark : Icons.bookmark_border,
@@ -413,23 +517,42 @@ class _IdeaDetailPageState extends State<IdeaDetailPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.teal,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        widget.idea.category,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.teal,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            widget.idea.category,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
+                        const Spacer(),
+                        // ========== TAMBAHAN: Like count di detail ==========
+                        Icon(
+                          Icons.thumb_up,
+                          size: 16,
+                          color: Colors.white.withValues(alpha: 0.8),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${widget.idea.likeCount} likes',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -471,8 +594,9 @@ class SavedIdeasPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final savedIdeas =
-        allIdeas.where((idea) => savedIds.contains(idea.id)).toList();
+    final savedIdeas = allIdeas
+        .where((idea) => savedIds.contains(idea.id))
+        .toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -514,8 +638,11 @@ class SavedIdeasPage extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>
-                            IdeaDetailPage(idea: idea, isSaved: true),
+                        builder: (_) => IdeaDetailPage(
+                          idea: idea,
+                          isSaved: true,
+                          isLiked: false, // ========== TAMBAHAN ==========
+                        ),
                       ),
                     );
                   },
@@ -577,14 +704,37 @@ class SavedIdeasPage extends StatelessWidget {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(
-                                    idea.category,
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.8,
+                                  Row(
+                                    children: [
+                                      Text(
+                                        idea.category,
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.8,
+                                          ),
+                                          fontSize: 12,
+                                        ),
                                       ),
-                                      fontSize: 12,
-                                    ),
+                                      const Spacer(),
+                                      // ========== TAMBAHAN: Like count ==========
+                                      Icon(
+                                        Icons.thumb_up,
+                                        size: 12,
+                                        color: Colors.white.withValues(
+                                          alpha: 0.8,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${idea.likeCount}',
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.8,
+                                          ),
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
