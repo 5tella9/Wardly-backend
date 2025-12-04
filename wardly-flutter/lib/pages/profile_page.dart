@@ -1,16 +1,22 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
     final isLoggedIn = user != null;
 
     if (!isLoggedIn) {
-      // Kalau belum login, tampilkan tombol login
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -23,11 +29,16 @@ class ProfilePage extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                // Navigate dan tunggu hasil
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const LoginPage()),
                 );
+                // Kalau sign in berhasil, refresh state
+                if (result == true && mounted) {
+                  setState(() {});
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.teal,
@@ -193,6 +204,12 @@ class ProfilePage extends StatelessWidget {
     try {
       await Supabase.instance.client.auth.signOut();
       if (!context.mounted) return;
+
+      // Refresh parent widget (ProfilePage)
+      if (context.findAncestorStateOfType<_ProfilePageState>() != null) {
+        context.findAncestorStateOfType<_ProfilePageState>()!.setState(() {});
+      }
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Signed out successfully')));
@@ -242,7 +259,7 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text,
       );
       if (!mounted) return;
-      Navigator.pop(context); // Balik ke profile
+      Navigator.pop(context, true); // ← Return true biar ProfilePage refresh
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Signed in successfully!')));
@@ -270,7 +287,7 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text,
       );
       if (!mounted) return;
-      Navigator.pop(context);
+      Navigator.pop(context, true); // ← Return true biar ProfilePage refresh
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Account created! Please sign in.')),
       );

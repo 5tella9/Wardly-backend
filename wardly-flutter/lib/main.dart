@@ -5,7 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_config.dart';
 import 'add_clothing_page.dart';
 import 'pages/opening_page.dart';
-import 'pages/profile_page.dart'; // Import ProfilePage baru
+import 'pages/profile_page.dart';
+import 'pages/trending_ideas_page.dart'; // Import Trending Ideas
 import 'dart:io';
 
 Future<void> main() async {
@@ -77,17 +78,28 @@ class _WardlyHomeState extends State<WardlyHome> {
             children: [
               buildHome(),
               buildAdd(),
+              const TrendingIdeasPage(), // Trending tab
               const ProfilePage(),
-            ], // Ganti buildProfile jadi ProfilePage
+            ],
           ),
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
         onTap: (i) => setState(() => _index = i),
+        type: BottomNavigationBarType.fixed, // Biar bisa lebih dari 3 tabs
+        selectedItemColor: Colors.teal,
+        unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Add'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add_circle_outline),
+            label: 'Add',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.lightbulb_outline),
+            label: 'Trending',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
@@ -99,33 +111,18 @@ class _WardlyHomeState extends State<WardlyHome> {
     return Column(
       children: [
         const SizedBox(height: 8),
-        // Ganti Wrap jadi SingleChildScrollView biar bisa slide horizontal
-        SizedBox(
-          height: 50,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal, // ← INI YANG BIKIN HORIZONTAL
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children:
-                  [
-                        'All',
-                        'Pants',
-                        'Skirts',
-                        'Dress',
-                        'Shirts',
-                        'Outer',
-                        'T-Shirt',
-                        'Hoodie',
-                      ]
-                      .map(
-                        (e) => Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: Chip(label: Text(e)),
-                        ),
-                      )
-                      .toList(),
-            ),
-          ),
+        Wrap(
+          spacing: 8,
+          children: [
+            'All',
+            'Pants',
+            'Skirts',
+            'Dress',
+            'Shirts',
+            'Outer',
+            'T-Shirt',
+            'Hoodie',
+          ].map((e) => Chip(label: Text(e))).toList(),
         ),
         Expanded(
           child: items.isEmpty
