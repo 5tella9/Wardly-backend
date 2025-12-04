@@ -6,7 +6,8 @@ import 'supabase_config.dart';
 import 'add_clothing_page.dart';
 import 'pages/opening_page.dart';
 import 'pages/profile_page.dart';
-import 'pages/trending_ideas_page.dart'; // Import Trending Ideas
+import 'pages/trending_ideas_page.dart';
+import 'pages/clothing_detail_page.dart'; // ← TAMBAHAN: Import detail page
 import 'dart:io';
 
 Future<void> main() async {
@@ -79,7 +80,7 @@ class _WardlyHomeState extends State<WardlyHome> {
               buildHome(),
               buildAdd(),
               const TrendingIdeasPage(), // Trending tab
-              const ProfilePage(),
+              ProfilePage(wardrobeItems: items), // ← UBAH: Kirim data items
             ],
           ),
         ),
@@ -155,38 +156,166 @@ class _WardlyHomeState extends State<WardlyHome> {
                     crossAxisCount: 2,
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
+                    childAspectRatio: 0.8, // ← TAMBAHAN: Biar card lebih tinggi
                   ),
                   itemCount: items.length,
                   itemBuilder: (_, i) {
                     final it = items[i];
                     final hasBytes = it.containsKey('bytes');
-                    final img = hasBytes
-                        ? Image.memory(
-                            it['bytes'] as Uint8List,
-                            fit: BoxFit.cover,
-                          )
-                        : Container(color: Colors.grey);
-                    return Stack(
-                      children: [
-                        Positioned.fill(child: img),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: IconButton(
-                            icon: Icon(
-                              it['fav']
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              color: Colors.red,
+
+                    // ========== UBAH: Wrap dengan GestureDetector ==========
+                    return GestureDetector(
+                      onTap: () async {
+                        // Buka detail page
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ClothingDetailPage(
+                              item: it,
+                              onDelete: () {
+                                setState(() {
+                                  items.removeAt(i);
+                                });
+                              },
+                             
                             ),
-                            onPressed: () {
-                              setState(() {
-                                items[i]['fav'] = !items[i]['fav'];
-                              });
-                            },
+                          ),
+                        );
+
+                        // Handle action dari detail page
+                        if (result != null && result is Map<String, dynamic>) {
+                          if (result['action'] == 'toggleFavorite') {
+                            setState(() {
+                              items[i]['fav'] = !(items[i]['fav'] ?? false);
+                            });
+                          }
+                        }
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Stack(
+                            children: [
+                              // Image
+                              Positioned.fill(
+                                child: hasBytes
+                                    ? Image.memory(
+                                        it['bytes'] as Uint8List,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Container(
+                                        color: Colors.grey[300],
+                                        child: const Icon(
+                                          Icons.image,
+                                          size: 50,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                              ),
+
+                              // Favorite button overlay
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.2,
+                                        ),
+                                        blurRadius: 4,
+                                      ),
+                                    ],
+                                  ),
+                                  child: IconButton(
+                                    icon: Icon(
+                                      it['fav']
+                                          ? Icons.favorite
+                                          : Icons.favorite_border,
+                                      color: it['fav']
+                                          ? Colors.red
+                                          : Colors.grey,
+                                      size: 20,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        items[i]['fav'] =
+                                            !(items[i]['fav'] ?? false);
+                                      });
+                                    },
+                                    padding: const EdgeInsets.all(8),
+                                  ),
+                                ),
+                              ),
+
+                              // Info label di bawah
+                              Positioned(
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.bottomCenter,
+                                      end: Alignment.topCenter,
+                                      colors: [
+                                        Colors.black.withValues(alpha: 0.7),
+                                        Colors.transparent,
+                                      ],
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (it['name'] != null &&
+                                          it['name'].toString().isNotEmpty)
+                                        Text(
+                                          it['name'],
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      if (it['type'] != null ||
+                                          it['category'] != null)
+                                        Text(
+                                          it['type'] ?? it['category'] ?? '',
+                                          style: TextStyle(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.8,
+                                            ),
+                                            fontSize: 11,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
+                      ),
                     );
                   },
                 ),

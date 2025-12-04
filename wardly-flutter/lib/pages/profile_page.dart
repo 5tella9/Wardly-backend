@@ -1,10 +1,15 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, unused_element
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:typed_data';
+import 'clothing_detail_page.dart'; // Import detail page
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final List<Map<String, dynamic>>?
+  wardrobeItems; // ← TAMBAHAN: Terima data items
+
+  const ProfilePage({super.key, this.wardrobeItems});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -68,6 +73,10 @@ class _ProfilePageState extends State<ProfilePage> {
       );
     }
 
+    // Hitung jumlah favorites
+    final favoriteCount =
+        widget.wardrobeItems?.where((item) => item['fav'] == true).length ?? 0;
+
     // Kalau udah login, tampilkan profile lengkap
     return SingleChildScrollView(
       child: Column(
@@ -99,11 +108,14 @@ class _ProfilePageState extends State<ProfilePage> {
             context,
             icon: Icons.favorite,
             title: 'Favorites',
-            subtitle: 'View your favorite items',
+            subtitle: '$favoriteCount items saved', // ← TAMBAHAN: Show count
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const FavoritesPage()),
+                MaterialPageRoute(
+                  builder: (_) =>
+                      FavoritesPage(items: widget.wardrobeItems ?? []),
+                ),
               );
             },
           ),
@@ -399,98 +411,220 @@ class AccountPage extends StatelessWidget {
 }
 
 // ============================================
-// FAVORITES PAGE
+// FAVORITES PAGE (UPDATED - Now shows items!)
 // ============================================
-class FavoritesPage extends StatelessWidget {
-  const FavoritesPage({super.key});
+class FavoritesPage extends StatefulWidget {
+  final List<Map<String, dynamic>> items;
+
+  const FavoritesPage({super.key, required this.items});
 
   @override
+  State<FavoritesPage> createState() => _FavoritesPageState();
+}
+
+class _FavoritesPageState extends State<FavoritesPage> {
+  @override
   Widget build(BuildContext context) {
+    // Filter hanya items yang di-favorite
+    final favoriteItems = widget.items
+        .where((item) => item['fav'] == true)
+        .toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Favorites'),
         backgroundColor: Colors.teal,
       ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.favorite_border, size: 80, color: Colors.grey),
-            SizedBox(height: 16),
-            Text(
-              'No favorites yet',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
+      body: favoriteItems.isEmpty
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.favorite_border, size: 80, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'No favorites yet',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Tap the heart icon on items to save them here',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            )
+          : GridView.builder(
+              padding: const EdgeInsets.all(16),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.8,
+              ),
+              itemCount: favoriteItems.length,
+              itemBuilder: (context, index) {
+                final item = favoriteItems[index];
+                final hasBytes = item.containsKey('bytes');
+
+                return GestureDetector(
+                  onTap: () async {
+                    // Buka detail page
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ClothingDetailPage(
+                          item: item,
+                          onDelete: null, // Disabled delete dari favorites
+                        ),
+                      ),
+                    );
+
+                    // Handle toggle favorite
+                    if (result != null && result is Map<String, dynamic>) {
+                      if (result['action'] == 'toggleFavorite') {
+                        setState(() {
+                          // Update favorite status
+                          item['fav'] = !(item['fav'] ?? false);
+                        });
+                      }
+                    }
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Stack(
+                        children: [
+                          // Image
+                          Positioned.fill(
+                            child: hasBytes
+                                ? Image.memory(
+                                    item['bytes'] as Uint8List,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Container(
+                                    color: Colors.grey[300],
+                                    child: const Icon(
+                                      Icons.image,
+                                      size: 50,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                          ),
+
+                          // Favorite indicator (always red since it's in favorites)
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.favorite,
+                                color: Colors.red,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+
+                          // Info label di bawah
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                  colors: [
+                                    Colors.black.withValues(alpha: 0.7),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (item['name'] != null &&
+                                      item['name'].toString().isNotEmpty)
+                                    Text(
+                                      item['name'],
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  if (item['type'] != null ||
+                                      item['category'] != null)
+                                    Text(
+                                      item['type'] ?? item['category'] ?? '',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.8,
+                                        ),
+                                        fontSize: 11,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
-            SizedBox(height: 8),
-            Text(
-              'Tap the heart icon on items to save them here',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
 
-// ============================================
-// DASHBOARD PAGE
-// ============================================
-class DashboardPage extends StatelessWidget {
-  const DashboardPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-        backgroundColor: Colors.teal,
-      ),
-      body: GridView.count(
-        padding: const EdgeInsets.all(16),
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        children: [
-          _buildStatCard('Total Items', '0', Icons.checkroom, Colors.blue),
-          _buildStatCard('Favorites', '0', Icons.favorite, Colors.red),
-          _buildStatCard('Categories', '8', Icons.category, Colors.orange),
-          _buildStatCard('This Month', '0', Icons.calendar_today, Colors.green),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 40, color: color),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  return Container(
+    decoration: BoxDecoration(
+      color: color.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: color.withOpacity(0.3)),
+    ),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, size: 40, color: color),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: color,
           ),
-          const SizedBox(height: 4),
-          Text(title, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
-        ],
-      ),
-    );
-  }
+        ),
+        const SizedBox(height: 4),
+        Text(title, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+      ],
+    ),
+  );
 }
