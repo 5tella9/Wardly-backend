@@ -1,9 +1,12 @@
 
 
+// ignore_for_file: unnecessary_underscores
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 
+// ignore: unused_import
 import '../supabase_config.dart';
 
 class TrendingIdea {
