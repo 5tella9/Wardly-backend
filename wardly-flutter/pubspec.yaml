@@ -13,7 +13,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.5.3
   camera: ^0.10.5+9
-  image_picker: ^1.0.7 # ← UPDATE INI (versi terbaru)
+  image_picker: ^1.0.7
   path_provider: ^2.0.11
   firebase_core: ^4.2.1
   firebase_auth: ^6.1.2
@@ -24,6 +24,15 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/wardly_logo.png"
 
 flutter:
   uses-material-design: true
+
+assets:
+  - assets/wardly_logo.png
